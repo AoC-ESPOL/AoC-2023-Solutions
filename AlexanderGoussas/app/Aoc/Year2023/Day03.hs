@@ -1,4 +1,4 @@
-module Aoc.Year2023.Day03 () where
+module Aoc.Year2023.Day03 (parseInput) where
 
 import           Control.Monad     (guard)
 import           Data.Char         (isDigit)
@@ -11,8 +11,8 @@ import           Data.Text         (Text)
 import qualified Data.Text         as T
 import qualified Data.Text.Read    as TR
 import qualified Data.Text.Unsafe  as TU
-import qualified Debug.Trace       as Debug
 
+import           AocLib
 import           Control.Monad.Aoc
 
 neighbors :: Int -> Int -> [(Int, Int)]
@@ -21,41 +21,31 @@ neighbors x y = do
   dy <- [-1, 0, 1]
   guard $ (dx, dy) /= (0, 0)
   return (x + dx, y + dy)
+{-# INLINE neighbors #-}
+
+isSymbol :: Text -> Bool
+isSymbol text = isSymbol' $ TU.unsafeHead text
+{-# INLINE isSymbol #-}
+
+isSymbol' :: Char -> Bool
+isSymbol' c = c /= '.' && not (isDigit c)
+{-# INLINE isSymbol' #-}
 
 parseInput :: Text -> Map (Int, Int) Text
 parseInput text = go Map.empty 0 (T.lines text)
   where
-    partsToPairs :: [Text] -> [(Int, Text)]
-    partsToPairs !texts = partsToPairs' texts 0 []
-    {-# INLINE partsToPairs #-}
-
-    partsToPairs' [] _ pairs = pairs
-    partsToPairs' ("":texts) !index pairs = partsToPairs' texts (index + 1) pairs
-    partsToPairs' (text:texts) !index pairs =
-      partsToPairs' texts (index + TU.lengthWord16 text + 1) ((index, text) : pairs)
-    {-# INLINE partsToPairs' #-}
-
-    insertIntoMap linum m x text =
-      let !groups = T.groupBy (\c x -> isDigit c && isDigit x) text in
-      let !groups' = zip (scanl1 (+) $ 0 : map TU.lengthWord16 groups) groups in
-      let m' = foldl' (\m (size, text) -> Map.insert (x + size, linum) text m) m groups' in
-      m'
-    {-# INLINE insertIntoMap #-}
-
     go m _ [] = m
     go m !linum (line:lines) =
-      let stuff = T.splitOn "." line in
-      let m' = foldl' (\m (x, text) -> insertIntoMap linum m x text) m (partsToPairs stuff) in
+      let !stuff = splitKeepingBy (\c -> isSymbol' c || c == '.') (T.unpack line) in
+      let !stuffWithOffset = zip (scanl1 (+) $ 0 : map length stuff) stuff in
+      let !cleanStuff = filter ((/=".") . snd) stuffWithOffset in
+      let !m' = foldl' (\m (offset, text) -> Map.insert (offset, linum) (T.pack text) m) m cleanStuff in
       go m' (linum + 1) lines
     {-# INLINE go #-}
 
 sumAdjacentParts :: Map (Int, Int) Text -> Int
 sumAdjacentParts parts = go parts (Map.keys parts) 0
   where
-    isSymbol text = text /= "." && not (isDigit $ TU.unsafeHead text)
-    {-# INLINE isSymbol #-}
-
-    go :: Map (Int, Int) Text -> [(Int, Int)] -> Int -> Int
     go _ [] !acc = acc
     go parts ((x, y):coords) !acc =
       let !text = parts ! (x, y) in
