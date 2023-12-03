@@ -1,5 +1,4 @@
 module Aoc.Year2023.Day01 where
-
 import           Data.Char            (digitToInt, isDigit)
 import           Data.Maybe           (mapMaybe)
 
