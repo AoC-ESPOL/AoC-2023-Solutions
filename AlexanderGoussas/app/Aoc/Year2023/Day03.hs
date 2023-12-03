@@ -1,16 +1,26 @@
-module Aoc.Year2023.Day03 where
+module Aoc.Year2023.Day03 () where
 
+import           Control.Monad     (guard)
 import           Data.Char         (isDigit)
 import           Data.Either       (fromRight)
 import           Data.List         (foldl')
-import           Data.Map          (Map, (!))
+import           Data.Map          (Map, (!), (!?))
 import qualified Data.Map          as Map
+import           Data.Maybe        (mapMaybe)
 import           Data.Text         (Text)
 import qualified Data.Text         as T
 import qualified Data.Text.Read    as TR
 import qualified Data.Text.Unsafe  as TU
+import qualified Debug.Trace       as Debug
 
 import           Control.Monad.Aoc
+
+neighbors :: Int -> Int -> [(Int, Int)]
+neighbors x y = do
+  dx <- [-1, 0, 1]
+  dy <- [-1, 0, 1]
+  guard $ (dx, dy) /= (0, 0)
+  return (x + dx, y + dy)
 
 parseInput :: Text -> Map (Int, Int) Text
 parseInput text = go Map.empty 0 (T.lines text)
@@ -40,27 +50,22 @@ parseInput text = go Map.empty 0 (T.lines text)
     {-# INLINE go #-}
 
 sumAdjacentParts :: Map (Int, Int) Text -> Int
-sumAdjacentParts parts = go parts (Map.keys parts) 0 (Map.keys parts)
+sumAdjacentParts parts = go parts (Map.keys parts) 0
   where
-    isAdjacentTo _ [] = False
-    isAdjacentTo (x', y') ((x,y):coords) =
-      if abs (x' - x) <= 1 && abs (y' - y) <= 1
-      then True
-      else isAdjacentTo (x', y') coords
-    {-# INLINE isAdjacentTo #-}
-
     isSymbol text = text /= "." && not (isDigit $ TU.unsafeHead text)
     {-# INLINE isSymbol #-}
 
-    go :: Map (Int, Int) Text -> [(Int, Int)] -> Int -> [(Int, Int)] -> Int
-    go _ [] !acc _ = acc
-    go parts ((x, y):coords) !acc allCoords =
+    go :: Map (Int, Int) Text -> [(Int, Int)] -> Int -> Int
+    go _ [] !acc = acc
+    go parts ((x, y):coords) !acc =
       let !text = parts ! (x, y) in
-      let !coords' = [(x', y) | x' <- [x .. x + T.length text - 1]] in
-      let isAdjacent = any (\coord -> isAdjacentTo coord coords' && isSymbol (parts ! coord)) allCoords in
-      if not (isSymbol text) && isAdjacent
-      then go parts coords (acc + (fst $ fromRight undefined $ TR.decimal text)) allCoords
-      else go parts coords acc allCoords
+      if isSymbol text
+      then go parts coords acc
+      else
+        let digits = [(x, y) | x <- [x .. x + T.length text - 1]] in
+        let adjacent = concatMap (filter isSymbol . mapMaybe (parts !?) . uncurry neighbors) digits in
+        let acc' = if null adjacent then acc else acc + fst (fromRight undefined $ TR.decimal text) in
+        go parts coords acc'
 
 multiplyGears :: Map (Int, Int) Text -> Int
 multiplyGears parts = sum $ go parts (Map.keys parts) []
@@ -97,11 +102,7 @@ multiplyGears parts = sum $ go parts (Map.keys parts) []
 instance MonadAoc 3 2023 where
   type Result 3 2023 = Int
 
-  partOne _ _ = do
-    input <- getInput
-    let parts = parseInput input
-    let result = sumAdjacentParts parts
-    return result
+  partOne _ _ = sumAdjacentParts . parseInput <$> getInput
 
   partTwo _ _ = do
     input <- getInput
