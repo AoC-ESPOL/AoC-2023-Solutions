@@ -1,11 +1,7 @@
 def lineProcessor(string):
-    halves = string[9:].strip().split(' | ')
+    halves = string[9:].strip().replace('  ',' ').split(' | ')
     winningNumbers = set(halves[0].split(' '))
-    if '' in winningNumbers:
-        winningNumbers.remove('')
     myNumbers = set(halves[1].split(' '))
-    if '' in myNumbers:
-        myNumbers.remove('')
     return (winningNumbers, myNumbers)
 
 def cardCalculator(set1, set2):
@@ -13,7 +9,7 @@ def cardCalculator(set1, set2):
     matches = len(intersection)
     return matches
 
-lines = open('D:\ESPOL\Advent of Code 2023\Day 4\input.txt').readlines()
+lines = open('input.txt').readlines()
 part1 = 0
 cards = [1] * len(lines)
 for i, line in enumerate(lines):
