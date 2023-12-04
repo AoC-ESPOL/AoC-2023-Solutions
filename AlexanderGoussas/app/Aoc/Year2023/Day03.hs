@@ -91,11 +91,5 @@ multiplyGears parts = sum $ go parts (Map.keys parts) []
 
 instance MonadAoc 3 2023 where
   type Result 3 2023 = Int
-
   partOne _ _ = sumAdjacentParts . parseInput <$> getInput
-
-  partTwo _ _ = do
-    input <- getInput
-    let parts = parseInput input
-    let result = multiplyGears parts
-    return result
+  partTwo _ _ = multiplyGears . parseInput <$> getInput
