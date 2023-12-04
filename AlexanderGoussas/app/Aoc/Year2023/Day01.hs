@@ -1,6 +1,11 @@
+{-# LANGUAGE NoStarIsType #-}
 module Aoc.Year2023.Day01 where
+
 import           Data.Char            (digitToInt, isDigit)
 import           Data.Maybe           (mapMaybe)
+import           Data.Proxy
+import           Data.Type.Bool
+import           GHC.TypeLits
 
 import           Data.Attoparsec.Text
 import           Data.Text            (Text)
@@ -19,6 +24,44 @@ sample =
   , "zoneight234"
   , "7pqrstsixteen"
   ]
+
+type family First (pair :: (Char, Symbol)) :: Char where First '(x, _) = x
+type family Second (pair :: (Char, Symbol)) :: Symbol where Second '(_, y) = y
+
+type family Unwrap (maybe :: Maybe (Char, Symbol)) :: (Char, Symbol) where
+  Unwrap ('Just x) = x
+  Unwrap 'Nothing  = TypeError ('Text "Unwrap: Nothing")
+
+type family IsJust (maybe :: Maybe (Char, Symbol)) :: Bool where
+  IsJust ('Just _) = 'True
+  IsJust 'Nothing  = 'False
+
+type family SymbolToList (s :: Symbol) :: [Char] where
+  SymbolToList "" = '[]
+  SymbolToList s =
+    If (IsJust (UnconsSymbol s))
+      (First (Unwrap (UnconsSymbol s)) ': SymbolToList (Second (Unwrap (UnconsSymbol s))))
+      '[]
+
+type family IsDigit c where
+  IsDigit c = (c <=? '9') && ('0' <=? c)
+
+type family FirstDigit (xs :: [Char]) :: Natural where
+  FirstDigit (x ': xs) = If (IsDigit x) (CharToNat x - 48) (FirstDigit xs)
+
+type family LastDigit (xs :: [Char]) (digit :: Natural) :: Natural where
+  LastDigit '[] digit = digit
+  LastDigit (x ': xs) digit = If (IsDigit x) (LastDigit xs (CharToNat x - 48)) (LastDigit xs digit)
+
+type Calibration (xs :: Symbol) = FirstDigit (SymbolToList xs) * 10 + LastDigit (SymbolToList xs) 0
+
+type family Solve (xs :: [Symbol]) :: Natural where
+  Solve '[] = 0
+  Solve (x ': xs) = Calibration x + Solve xs
+
+-- type Input = Put your input as a list of symbols here.
+-- solve1 :: Integer
+-- solve1 = natVal (Proxy @(Solve Input))
 
 firstDigit :: Text -> Int
 firstDigit = digitToInt . T.head . T.dropWhile (not . isDigit)
@@ -89,12 +132,7 @@ parseFirstAndLast text = (,) <$> parseFirst text <*> parseLast text
 instance MonadAoc 1 2023 where
   type Result 1 2023 = Int
 
-  partOne _ _ = do
-    input <- getInput
-    return
-      . sum
-      . map (\line -> firstDigit line * 10 + lastDigit line)
-      $ T.lines input
+  -- partOne _ _ = return $ fromIntegral solve1
 
   partTwo _ _ = do
     input <- getInput
