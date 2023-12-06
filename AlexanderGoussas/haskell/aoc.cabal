@@ -22,6 +22,7 @@ executable aoc
                     , Aoc.Year2023.Day03
                     , Aoc.Year2023.Day04
                     , Aoc.Year2023.Day05
+                    , Aoc.Year2023.Day06
     build-depends:    base ^>=4.16.4.0
                     , containers
                     , text
