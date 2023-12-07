@@ -18,22 +18,26 @@ parseRaces text =
   let lines = T.lines text in
   let [times, distances] = map ((map (read . T.unpack) . filter (not . T.null)) . drop 1 . T.splitOn " ") lines in
   zipWith Race times distances
+{-# INLINE parseRaces #-}
 
 parseSingleRace :: Text -> Race
 parseSingleRace text =
   let lines = T.lines text in
   let [time, distance] = map (read . T.unpack . mconcat . drop 1 . T.splitOn " ") lines in
   Race time distance
+{-# INLINE parseSingleRace #-}
 
 numberOfWaysToBeatRecord :: Race -> Int
 numberOfWaysToBeatRecord (Race {..}) = go raceTime raceDist 0 0
   where
-    go time _ !ways !millis | millis >= time = ways
-    go time recordDist !ways !millis | millis < time =
-      let !dist = millis * (time - millis) in
-      if dist > recordDist
-      then go time recordDist (ways + 1) (millis + 1)
-      else go time recordDist ways (millis + 1)
+    -- TODO: This is a bit of a hack, but it works
+    delta = 1
+
+    go !time !recordDist !ways !millis
+      | millis >= time = ways
+      | millis < time && millis * (time - millis) > recordDist =
+          go time recordDist (ways + delta) (millis + delta)
+      | otherwise = go time recordDist ways (millis + delta)
 
 instance MonadAoc 6 2023 where
   type Result 6 2023 = Int
