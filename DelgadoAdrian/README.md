@@ -10,3 +10,4 @@ Véase [mi repo](https://github.com/adriandelgado/advent-of-code).
 - [Día 6](https://github.com/adriandelgado/advent-of-code/blob/main/src/y2023/d06.rs)
 - [Día 7](https://github.com/adriandelgado/advent-of-code/blob/main/src/y2023/d07.rs)
 - [Día 8](https://github.com/adriandelgado/advent-of-code/blob/main/src/y2023/d08.rs)
+- [Día 9](https://github.com/adriandelgado/advent-of-code/blob/main/src/y2023/d09.rs)
